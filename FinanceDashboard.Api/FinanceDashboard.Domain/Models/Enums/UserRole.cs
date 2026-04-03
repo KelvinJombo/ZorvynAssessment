@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FinanceDashboard.Domain.Models.Enums
+﻿namespace FinanceDashboard.Domain.Models.Enums
 {
-    internal class UserRole
+    public enum UserRole
     {
+        Viewer = 1,
+        Analyst = 2,
+        Admin = 3
     }
 }

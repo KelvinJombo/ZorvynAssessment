@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FinanceDashboard.Domain.Models.Enums
+﻿namespace FinanceDashboard.Domain.Models.Enums
 {
-    internal class RecordType
+    public enum RecordType
     {
+        Income = 1,
+        Expense = 2
     }
 }
