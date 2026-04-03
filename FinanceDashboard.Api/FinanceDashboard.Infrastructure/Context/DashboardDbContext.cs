@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceDashboard.Infrastructure.Context
 {
-    public class DashboardDbContext : IdentityDbContext<ApplicationUser>
+    public class DashboardDbContext : IdentityDbContext<User>
     {
         public DashboardDbContext(DbContextOptions<DashboardDbContext> options)
             : base(options)

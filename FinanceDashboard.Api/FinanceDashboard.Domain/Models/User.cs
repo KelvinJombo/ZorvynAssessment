@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace FinanceDashboard.Domain.Models
 {
-    public class ApplicationUser : IdentityUser
+    public class User : IdentityUser
     {
         public string FirstName { get; set; }
         public string LastName { get; set; }

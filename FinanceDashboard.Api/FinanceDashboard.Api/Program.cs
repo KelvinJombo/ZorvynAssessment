@@ -1,16 +1,53 @@
+using FinanceDashboard.Application.Interfaces;
 using FinanceDashboard.Application.Interfaces.IServices;
 using FinanceDashboard.Application.Services;
 using FinanceDashboard.Application.Validators;
+using FinanceDashboard.Domain.Models;
+using FinanceDashboard.Infrastructure.Context;
 using FinanceDashboard.Infrastructure.Extensions;
 using FluentValidation;
 using FluentValidation.AspNetCore;
-using System.Reflection; 
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
+using System.Reflection;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
 // Add services to the container.   
 builder.Services.AddInfrastructure(configuration);
+builder.Services.AddIdentity<User, IdentityRole>()
+    .AddEntityFrameworkStores<DashboardDbContext>()
+    .AddDefaultTokenProviders();
+
+
+var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(key)
+    };
+});
+
+builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+
+builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<IFinancialRecordService, FinancialRecordService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
@@ -35,6 +72,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
