@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinanceDashboard.Applicatio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinanceDashboard.Infrastructure", "FinanceDashboard.Infrastructure\FinanceDashboard.Infrastructure.csproj", "{4C6D9B9C-31AE-4041-8AB5-8706048BE505}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinanceDashboard.Commons", "FinanceDashboard.Commons\FinanceDashboard.Commons.csproj", "{B5FC9BE4-165F-4452-AD53-D9A64D23639C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{4C6D9B9C-31AE-4041-8AB5-8706048BE505}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4C6D9B9C-31AE-4041-8AB5-8706048BE505}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4C6D9B9C-31AE-4041-8AB5-8706048BE505}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B5FC9BE4-165F-4452-AD53-D9A64D23639C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B5FC9BE4-165F-4452-AD53-D9A64D23639C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B5FC9BE4-165F-4452-AD53-D9A64D23639C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B5FC9BE4-165F-4452-AD53-D9A64D23639C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

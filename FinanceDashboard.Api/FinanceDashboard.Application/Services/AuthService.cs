@@ -2,6 +2,7 @@
 using FinanceDashboard.Application.Interfaces;
 using FinanceDashboard.Application.Interfaces.IServices;
 using FinanceDashboard.Application.Interfaces.Repository;
+using FinanceDashboard.Commons.Utilities;
 using FinanceDashboard.Domain.Models;
 using FinanceDashboard.Domain.Models.Enums;
 using Microsoft.AspNetCore.Identity;
@@ -25,11 +26,23 @@ namespace FinanceDashboard.Application.Services
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<string> RegisterAsync(RegisterDto dto)
+        public async Task<Response<string>> RegisterAsync(RegisterDto dto)
         {
             var existingUser = await _userManager.FindByNameAsync(dto.Username);
+
             if (existingUser != null)
-                throw new Exception("Username already exists");
+                return Response<string>.Failure(
+                    ResponseMessages.UserAlreadyExists,
+                    StatusCodes.BadRequest
+                );
+
+            var emailExists = await _userManager.FindByEmailAsync(dto.Email);
+
+            if (emailExists != null)
+                return Response<string>.Failure(
+                    ResponseMessages.EmailAlreadyExists,
+                    StatusCodes.BadRequest
+                );
 
             var user = new User
             {
@@ -44,26 +57,40 @@ namespace FinanceDashboard.Application.Services
             var result = await _userManager.CreateAsync(user, dto.Password);
 
             if (!result.Succeeded)
-                throw new Exception(string.Join(", ", result.Errors.Select(e => e.Description)));
+            {
+                var errors = result.Errors.Select(e => e.Description).ToList();
 
+                return Response<string>.Failure(
+                    ResponseMessages.Failed,
+                    StatusCodes.BadRequest,
+                    errors
+                );
+            }
 
-            //Role Assignment to New Users
-            var roleName = user.Role.ToString(); 
+            // ✅ Assign role
+            var roleName = user.Role.ToString();
             await _userManager.AddToRoleAsync(user, roleName);
 
-            return "User registered successfully";
+            return Response<string>.Success(
+                "User created",
+                ResponseMessages.UserCreated,
+                StatusCodes.Created
+            );
         }
 
-        public async Task<string> LoginAsync(LoginDto dto)
+        public async Task<Response<AuthResponseDto>> LoginAsync(LoginDto dto)
         {
             var user = await _userManager.Users
                 .Include(u => u.FinancialRecords)
                 .FirstOrDefaultAsync(u => u.UserName == dto.Username);
 
             if (user == null)
-                throw new Exception("Invalid credentials");
+                return Response<AuthResponseDto>.Failure(
+                    ResponseMessages.InvalidCredentials,
+                    StatusCodes.Unauthorized
+                );
 
-            //Auto deactivate if inactive for 3 months
+            // 🔄 Auto deactivate if inactive for 3 months
             var lastTransaction = user.FinancialRecords
                 .OrderByDescending(x => x.Date)
                 .FirstOrDefault();
@@ -75,27 +102,49 @@ namespace FinanceDashboard.Application.Services
             }
 
             if (!user.IsActive)
-                throw new Exception("Account is inactive");
+                return Response<AuthResponseDto>.Failure(
+                    ResponseMessages.AccountInactive,
+                    StatusCodes.Unauthorized
+                );
 
             var passwordValid = await _userManager.CheckPasswordAsync(user, dto.Password);
 
             if (!passwordValid)
-                throw new Exception("Invalid credentials");
+                return Response<AuthResponseDto>.Failure(
+                    ResponseMessages.InvalidCredentials,
+                    StatusCodes.Unauthorized
+                );
 
-            return _jwtService.GenerateToken(user);
+            var token = _jwtService.GenerateToken(user);
+            var expiresAt = DateTime.UtcNow.AddHours(24);
+            var authResponse = new AuthResponseDto
+            {
+                Token = token,
+                ExpiresAt = expiresAt,               
+            };
+
+            return Response<AuthResponseDto>.Success(
+                authResponse,
+                ResponseMessages.Success                
+            );
         }
 
-        public async Task LogoutAsync(string userId)
+        public async Task<Response<string>> LogoutAsync(string userId)
         {
-            // Stateless JWT → no real logout unless you track tokens
-            // Here we simulate logout by updating security stamp
-
             var user = await _userManager.FindByIdAsync(userId);
 
             if (user == null)
-                throw new Exception("User not found");
+                return Response<string>.Failure(
+                    ResponseMessages.UserNotFound,
+                    StatusCodes.NotFound
+                );
 
             await _userManager.UpdateSecurityStampAsync(user);
+
+            return Response<string>.Success(
+                "Logged out",
+                ResponseMessages.LogoutSuccess
+            );
         }
     }
 }

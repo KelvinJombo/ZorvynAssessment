@@ -1,6 +1,7 @@
 using AutoMapper;
 using FinanceDashboard.Api;
 using FinanceDashboard.Api.AutoMapper;
+using FinanceDashboard.Api.Middleware;
 using FinanceDashboard.Application.Interfaces;
 using FinanceDashboard.Application.Interfaces.IServices;
 using FinanceDashboard.Application.Services;
@@ -80,7 +81,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseMiddleware<ExceptionMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 

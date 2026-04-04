@@ -23,24 +23,23 @@ namespace FinanceDashboard.Api.Controllers
         public async Task<IActionResult> Register(RegisterDto dto)
         {
             var result = await _authService.RegisterAsync(dto);
-            return Ok(new { message = result });
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto dto)
         {
-            var token = await _authService.LoginAsync(dto);
-            return Ok(new { token });
+            var result = await _authService.LoginAsync(dto);
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var result = await _authService.LogoutAsync(userId!);
 
-            await _authService.LogoutAsync(userId);
-
-            return Ok(new { message = "Logged out successfully" });
+            return StatusCode(result.StatusCode, result);
         }
     }
 }

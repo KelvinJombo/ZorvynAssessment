@@ -2,6 +2,7 @@
 using FinanceDashboard.Application.DTOs.Record;
 using FinanceDashboard.Application.Interfaces.IServices;
 using FinanceDashboard.Application.Interfaces.Repository;
+using FinanceDashboard.Commons.Utilities;
 using FinanceDashboard.Domain.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,13 +17,12 @@ namespace FinanceDashboard.Application.Services
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<DashboardSummaryDto> GetSummaryAsync(string userId)
+        public async Task<Response<DashboardSummaryDto>> GetSummaryAsync(string userId)
         {
             var query = _unitOfWork.FinancialRecordRepository
                 .Query()
                 .Where(x => x.UserId == userId);
 
-            //Database-side aggregations
             var income = await query
                 .Where(x => x.Type == RecordType.Income)
                 .SumAsync(x => (decimal?)x.Amount) ?? 0;
@@ -31,13 +31,11 @@ namespace FinanceDashboard.Application.Services
                 .Where(x => x.Type == RecordType.Expense)
                 .SumAsync(x => (decimal?)x.Amount) ?? 0;
 
-            //Category totals. DB-side calculation
             var categoryTotals = await query
                 .GroupBy(x => x.Category)
                 .Select(g => new { g.Key, Total = g.Sum(x => x.Amount) })
                 .ToDictionaryAsync(x => x.Key, x => x.Total);
 
-            //Recent 5 transactions 
             var recent = await query
                 .OrderByDescending(x => x.Date)
                 .Take(5)
@@ -52,7 +50,7 @@ namespace FinanceDashboard.Application.Services
                 })
                 .ToListAsync();
 
-            return new DashboardSummaryDto
+            var summary = new DashboardSummaryDto
             {
                 TotalIncome = income,
                 TotalExpenses = expenses,
@@ -60,41 +58,61 @@ namespace FinanceDashboard.Application.Services
                 CategoryTotals = categoryTotals,
                 RecentTransactions = recent
             };
+
+            return Response<DashboardSummaryDto>.Success(
+                summary,
+                ResponseMessages.DashboardFetched
+            );
         }
 
 
-        public async Task<decimal> GetTotalIncomeAsync(string userId)
+        public async Task<Response<decimal>> GetTotalIncomeAsync(string userId)
         {
-            return await _unitOfWork.FinancialRecordRepository
+            var total = await _unitOfWork.FinancialRecordRepository
                 .Query()
                 .Where(x => x.UserId == userId && x.Type == RecordType.Income)
                 .SumAsync(x => (decimal?)x.Amount) ?? 0;
+
+            return Response<decimal>.Success(
+                total,
+                ResponseMessages.Success
+            );
         }
 
 
-        public async Task<decimal> GetTotalExpensesAsync(string userId)
+        public async Task<Response<decimal>> GetTotalExpensesAsync(string userId)
         {
-            return await _unitOfWork.FinancialRecordRepository
+            var total = await _unitOfWork.FinancialRecordRepository
                 .Query()
                 .Where(x => x.UserId == userId && x.Type == RecordType.Expense)
                 .SumAsync(x => (decimal?)x.Amount) ?? 0;
+
+            return Response<decimal>.Success(
+                total,
+                ResponseMessages.Success
+            );
         }
 
 
-        public async Task<Dictionary<string, decimal>> GetCategoryTotalsAsync(string userId)
+        public async Task<Response<Dictionary<string, decimal>>> GetCategoryTotalsAsync(string userId)
         {
-            return await _unitOfWork.FinancialRecordRepository
+            var result = await _unitOfWork.FinancialRecordRepository
                 .Query()
                 .Where(x => x.UserId == userId)
                 .GroupBy(x => x.Category)
                 .Select(g => new { Category = g.Key, Total = g.Sum(x => x.Amount) })
                 .ToDictionaryAsync(x => x.Category, x => x.Total);
+
+            return Response<Dictionary<string, decimal>>.Success(
+                result,
+                ResponseMessages.Success
+            );
         }
 
 
-        public async Task<List<FinancialRecordResponseDto>> GetRecentAsync(string userId)
+        public async Task<Response<List<FinancialRecordResponseDto>>> GetRecentAsync(string userId)
         {
-            return await _unitOfWork.FinancialRecordRepository
+            var result = await _unitOfWork.FinancialRecordRepository
                 .Query()
                 .Where(x => x.UserId == userId)
                 .OrderByDescending(x => x.Date)
@@ -109,12 +127,17 @@ namespace FinanceDashboard.Application.Services
                     Notes = r.Notes
                 })
                 .ToListAsync();
+
+            return Response<List<FinancialRecordResponseDto>>.Success(
+                result,
+                ResponseMessages.Success
+            );
         }
 
 
-        public async Task<List<MonthlyTrendDto>> GetMonthlyTrendsAsync(string userId)
+        public async Task<Response<List<MonthlyTrendDto>>> GetMonthlyTrendsAsync(string userId)
         {
-            return await _unitOfWork.FinancialRecordRepository
+            var result = await _unitOfWork.FinancialRecordRepository
                 .Query()
                 .Where(x => x.UserId == userId)
                 .GroupBy(x => new { x.Date.Year, x.Date.Month })
@@ -132,6 +155,11 @@ namespace FinanceDashboard.Application.Services
                 .OrderBy(x => x.Year)
                 .ThenBy(x => x.Month)
                 .ToListAsync();
+
+            return Response<List<MonthlyTrendDto>>.Success(
+                result,
+                ResponseMessages.TrendsFetched
+            );
         }
 
     }

@@ -26,7 +26,7 @@ namespace FinanceDashboard.Api.Controllers
         public async Task<IActionResult> GetAll()
         {
             var result = await _service.GetAllAsync(GetUserId());
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpPost]
@@ -34,7 +34,7 @@ namespace FinanceDashboard.Api.Controllers
         public async Task<IActionResult> Create(CreateFinancialRecordDto dto)
         {
             var result = await _service.CreateAsync(GetUserId(), dto);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpPut("{id}")]
@@ -42,7 +42,7 @@ namespace FinanceDashboard.Api.Controllers
         public async Task<IActionResult> Update(string id, UpdateFinancialRecordDto dto)
         {
             var result = await _service.UpdateAsync(id, GetUserId(), dto);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
 

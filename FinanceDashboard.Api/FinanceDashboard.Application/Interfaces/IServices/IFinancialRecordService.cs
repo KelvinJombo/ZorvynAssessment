@@ -1,14 +1,13 @@
 ﻿using FinanceDashboard.Application.DTOs.Record;
-using FinanceDashboard.Domain.Models;
+using FinanceDashboard.Commons.Utilities;
 
 namespace FinanceDashboard.Application.Interfaces.IServices
-{
+{    
     public interface IFinancialRecordService
     {
-        Task<List<FinancialRecordResponseDto>> GetAllAsync(string userId);
-
-        Task<FinancialRecordResponseDto> CreateAsync(string userId, CreateFinancialRecordDto dto);
-        Task<FinancialRecordResponseDto> UpdateAsync(string id, string userId, UpdateFinancialRecordDto dto);
-        Task DeleteAsync(string id, string userId);
+        Task<Response<FinancialRecordResponseDto>> CreateAsync(string userId, CreateFinancialRecordDto dto);
+        Task<Response<List<FinancialRecordResponseDto>>> GetAllAsync(string userId);
+        Task<Response<string>> DeleteAsync(string id, string userId);
+        Task<Response<FinancialRecordResponseDto>> UpdateAsync(string id, string userId, UpdateFinancialRecordDto dto);
     }
 }

@@ -2,6 +2,7 @@
 using FinanceDashboard.Application.DTOs.Record;
 using FinanceDashboard.Application.Interfaces.IServices;
 using FinanceDashboard.Application.Interfaces.Repository;
+using FinanceDashboard.Commons.Utilities;
 using FinanceDashboard.Domain.Models;
 using FinanceDashboard.Domain.Models.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -19,26 +20,30 @@ namespace FinanceDashboard.Application.Services
             _mapper = mapper;
         }
 
-        public async Task<List<FinancialRecordResponseDto>> GetAllAsync(string userId)
+        public async Task<Response<List<FinancialRecordResponseDto>>> GetAllAsync(string userId)
         {
             var records = await _unitOfWork.FinancialRecordRepository
                 .Query()
                 .Where(x => x.UserId == userId)
                 .OrderByDescending(x => x.Date)
+                .Select(r => new FinancialRecordResponseDto
+                {
+                    Id = r.Id,
+                    Amount = r.Amount,
+                    Type = r.Type.ToString(),
+                    Category = r.Category,
+                    Date = r.Date,
+                    Notes = r.Notes
+                })
                 .ToListAsync();
 
-            return records.Select(r => new FinancialRecordResponseDto
-            {
-                Id = r.Id,
-                Amount = r.Amount,
-                Type = r.Type.ToString(),
-                Category = r.Category,
-                Date = r.Date,
-                Notes = r.Notes
-            }).ToList();
+            return Response<List<FinancialRecordResponseDto>>.Success(
+                records,
+                ResponseMessages.Success
+            );
         }
 
-        public async Task<FinancialRecordResponseDto> CreateAsync(string userId, CreateFinancialRecordDto dto)
+        public async Task<Response<FinancialRecordResponseDto>> CreateAsync(string userId, CreateFinancialRecordDto dto)
         {
             var record = new FinancialRecord
             {
@@ -53,7 +58,7 @@ namespace FinanceDashboard.Application.Services
             await _unitOfWork.FinancialRecordRepository.AddAsync(record);
             await _unitOfWork.SaveChangesAsync();
 
-            return new FinancialRecordResponseDto
+            var result = new FinancialRecordResponseDto
             {
                 Id = record.Id,
                 Amount = record.Amount,
@@ -62,20 +67,30 @@ namespace FinanceDashboard.Application.Services
                 Date = record.Date,
                 Notes = record.Notes
             };
+
+            return Response<FinancialRecordResponseDto>.Success(
+                result,
+                ResponseMessages.RecordCreated,
+                StatusCodes.Created
+            );
         }
 
-        public async Task<FinancialRecordResponseDto> UpdateAsync(string id, string userId, UpdateFinancialRecordDto dto)
+        public async Task<Response<FinancialRecordResponseDto>> UpdateAsync(string id, string userId, UpdateFinancialRecordDto dto)
         {
             var record = await _unitOfWork.FinancialRecordRepository.GetByIdAsync(id);
 
             if (record == null)
-                throw new Exception("Record not found");
+                return Response<FinancialRecordResponseDto>.Failure(
+                    ResponseMessages.RecordNotFound,
+                    StatusCodes.NotFound
+                );
 
-            //Ensure user owns the record or its Admin User
-            if (record.UserId != userId && record.User.Role != UserRole.Admin)
-                throw new UnauthorizedAccessException("You are not allowed to update this record");
+            if (record.UserId != userId)
+                return Response<FinancialRecordResponseDto>.Failure(
+                    ResponseMessages.Unauthorized,
+                    StatusCodes.Unauthorized
+                );
 
-            //Update fields
             record.Amount = dto.Amount;
             record.Type = dto.Type;
             record.Category = dto.Category;
@@ -83,24 +98,40 @@ namespace FinanceDashboard.Application.Services
             record.Notes = dto.Notes;
 
             _unitOfWork.FinancialRecordRepository.Update(record);
-
             await _unitOfWork.SaveChangesAsync();
 
-            return _mapper.Map<FinancialRecordResponseDto>(record);
+            var result = _mapper.Map<FinancialRecordResponseDto>(record);
+
+            return Response<FinancialRecordResponseDto>.Success(
+                result,
+                ResponseMessages.RecordUpdated
+            );
         }
 
 
-        public async Task DeleteAsync(string id, string userId)
+        public async Task<Response<string>> DeleteAsync(string id, string userId)
         {
-            var record = await _unitOfWork.FinancialRecordRepository
-                .Query()
-                .FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId);
+            var record = await _unitOfWork.FinancialRecordRepository.GetByIdAsync(id);
 
             if (record == null)
-                throw new Exception("Record not found");
+                return Response<string>.Failure(
+                    ResponseMessages.RecordNotFound,
+                    StatusCodes.NotFound
+                );
+
+            if (record.UserId != userId)
+                return Response<string>.Failure(
+                    ResponseMessages.Unauthorized,
+                    StatusCodes.Unauthorized
+                );
 
             _unitOfWork.FinancialRecordRepository.Delete(record);
             await _unitOfWork.SaveChangesAsync();
+
+            return Response<string>.Success(
+                "Deleted",
+                ResponseMessages.RecordDeleted
+            );
         }
     }
 }

@@ -28,7 +28,7 @@ namespace FinanceDashboard.Api.Controllers
         public async Task<IActionResult> GetSummary()
         {
             var result = await _dashboardService.GetSummaryAsync(GetUserId());
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
 
@@ -36,7 +36,7 @@ namespace FinanceDashboard.Api.Controllers
         public async Task<IActionResult> GetTotalIncome()
         {
             var result = await _dashboardService.GetTotalIncomeAsync(GetUserId());
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
 
@@ -44,7 +44,7 @@ namespace FinanceDashboard.Api.Controllers
         public async Task<IActionResult> GetTotalExpenses()
         {
             var result = await _dashboardService.GetTotalExpensesAsync(GetUserId());
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
 
@@ -52,7 +52,7 @@ namespace FinanceDashboard.Api.Controllers
         public async Task<IActionResult> GetCategoryTotals()
         {
             var result = await _dashboardService.GetCategoryTotalsAsync(GetUserId());
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
 
@@ -60,7 +60,7 @@ namespace FinanceDashboard.Api.Controllers
         public async Task<IActionResult> GetRecent()
         {
             var result = await _dashboardService.GetRecentAsync(GetUserId());
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
 
@@ -68,7 +68,7 @@ namespace FinanceDashboard.Api.Controllers
         public async Task<IActionResult> GetMonthlyTrends()
         {
             var result = await _dashboardService.GetMonthlyTrendsAsync(GetUserId());
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
 
