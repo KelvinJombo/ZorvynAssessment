@@ -1,7 +1,10 @@
-﻿using FinanceDashboard.Application.Interfaces;
+﻿using FinanceDashboard.Application.DTOs.Auth;
+using FinanceDashboard.Application.Interfaces;
+using FinanceDashboard.Application.Interfaces.IServices;
 using FinanceDashboard.Domain.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace FinanceDashboard.Api.Controllers
 {
@@ -9,45 +12,35 @@ namespace FinanceDashboard.Api.Controllers
     [Route("api/auth")]
     public class AuthController : ControllerBase
     {
-        private readonly UserManager<User> _userManager;
-        private readonly IJwtTokenService _jwtService;
+        private readonly IAuthService _authService;
 
-        public AuthController(UserManager<User> userManager, IJwtTokenService jwtService)
+        public AuthController(IAuthService authService)
         {
-            _userManager = userManager;
-            _jwtService = jwtService;
+            _authService = authService;
         }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterDto dto)
         {
-            var user = new User
-            {
-                UserName = dto.Username,
-                Email = dto.Email,
-                Role = dto.Role,
-                IsActive = true
-            };
-
-            var result = await _userManager.CreateAsync(user, dto.Password);
-
-            if (!result.Succeeded)
-                return BadRequest(result.Errors);
-
-            return Ok("User registered successfully");
+            var result = await _authService.RegisterAsync(dto);
+            return Ok(new { message = result });
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto dto)
         {
-            var user = await _userManager.FindByNameAsync(dto.Username);
-
-            if (user == null || !await _userManager.CheckPasswordAsync(user, dto.Password))
-                return Unauthorized("Invalid credentials");
-
-            var token = _jwtService.GenerateToken(user);
-
+            var token = await _authService.LoginAsync(dto);
             return Ok(new { token });
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            await _authService.LogoutAsync(userId);
+
+            return Ok(new { message = "Logged out successfully" });
         }
     }
 }

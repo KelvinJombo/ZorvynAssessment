@@ -1,3 +1,6 @@
+using AutoMapper;
+using FinanceDashboard.Api;
+using FinanceDashboard.Api.AutoMapper;
 using FinanceDashboard.Application.Interfaces;
 using FinanceDashboard.Application.Interfaces.IServices;
 using FinanceDashboard.Application.Services;
@@ -48,10 +51,10 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
 builder.Services.AddAuthorization();
-
+builder.Services.AddAutoMapper(typeof(MapperProfiles));
 builder.Services.AddScoped<IFinancialRecordService, FinancialRecordService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
-
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddFluentValidationAutoValidation();
 
 builder.Services.AddValidatorsFromAssembly(Assembly.GetAssembly(typeof(CreateFinancialRecordValidator)));
@@ -62,6 +65,12 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// Seed database with roles and users
+using (var scope = app.Services.CreateScope())
+{
+    await DatabaseSeeder.SeedAsync(scope.ServiceProvider);
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

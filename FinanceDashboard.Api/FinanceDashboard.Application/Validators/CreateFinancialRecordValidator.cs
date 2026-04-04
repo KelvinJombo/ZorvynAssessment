@@ -1,4 +1,4 @@
-﻿using FinanceDashboard.Application.DTOs;
+﻿using FinanceDashboard.Application.DTOs.Record;
 using FluentValidation;
 
 namespace FinanceDashboard.Application.Validators

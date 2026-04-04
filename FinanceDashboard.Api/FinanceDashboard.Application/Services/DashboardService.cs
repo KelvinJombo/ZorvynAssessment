@@ -1,4 +1,5 @@
-﻿using FinanceDashboard.Application.DTOs;
+﻿using FinanceDashboard.Application.DTOs.Dashboard;
+using FinanceDashboard.Application.DTOs.Record;
 using FinanceDashboard.Application.Interfaces.IServices;
 using FinanceDashboard.Application.Interfaces.Repository;
 using FinanceDashboard.Domain.Models.Enums;

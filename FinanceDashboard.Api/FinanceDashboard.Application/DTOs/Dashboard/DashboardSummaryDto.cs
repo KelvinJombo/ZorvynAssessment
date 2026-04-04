@@ -1,4 +1,6 @@
-﻿namespace FinanceDashboard.Application.DTOs
+﻿using FinanceDashboard.Application.DTOs.Record;
+
+namespace FinanceDashboard.Application.DTOs.Dashboard
 {
     public class DashboardSummaryDto
     {

@@ -1,4 +1,4 @@
-﻿namespace FinanceDashboard.Application.DTOs
+﻿namespace FinanceDashboard.Application.DTOs.Record
 {
     public class CreateFinancialRecordDto
     {

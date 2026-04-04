@@ -11,7 +11,7 @@ namespace FinanceDashboard.Infrastructure.Context
         {
         }
 
-        public DbSet<FinancialRecord> FinancialRecords { get; set; }
+        public DbSet<FinancialRecord> FinancialRecords { get; set; }       
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

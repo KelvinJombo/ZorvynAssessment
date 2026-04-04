@@ -11,8 +11,6 @@ namespace FinanceDashboard.Domain.Models
         public bool IsActive { get; set; } = true;
 
         public UserRole Role { get; set; }
-
-        // Navigation
         public ICollection<FinancialRecord> FinancialRecords { get; set; } = new List<FinancialRecord>();
     }
 }

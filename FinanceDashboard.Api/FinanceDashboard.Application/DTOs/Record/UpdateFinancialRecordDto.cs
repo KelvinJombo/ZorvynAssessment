@@ -1,19 +1,13 @@
 ﻿using FinanceDashboard.Domain.Models.Enums;
 
-namespace FinanceDashboard.Domain.Models
+namespace FinanceDashboard.Application.DTOs.Record
 {
-    public class FinancialRecord : BaseEntity
+    public class UpdateFinancialRecordDto
     {
         public decimal Amount { get; set; }
-
         public RecordType Type { get; set; }
-
         public string Category { get; set; }
-
         public DateTime Date { get; set; }
-
-        public string Notes { get; set; }       
-        public string UserId { get; set; }
-        public User User { get; set; }
+        public string Notes { get; set; }
     }
 }

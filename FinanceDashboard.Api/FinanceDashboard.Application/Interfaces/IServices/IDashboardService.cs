@@ -1,4 +1,4 @@
-﻿using FinanceDashboard.Application.DTOs;
+﻿using FinanceDashboard.Application.DTOs.Dashboard;
 
 namespace FinanceDashboard.Application.Interfaces.IServices
 {
