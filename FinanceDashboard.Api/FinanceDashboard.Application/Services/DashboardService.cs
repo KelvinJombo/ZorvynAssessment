@@ -18,19 +18,27 @@ namespace FinanceDashboard.Application.Services
 
         public async Task<DashboardSummaryDto> GetSummaryAsync(string userId)
         {
-            var records = await _unitOfWork.FinancialRecordRepository
+            var query = _unitOfWork.FinancialRecordRepository
                 .Query()
-                .Where(x => x.UserId == userId)
-                .ToListAsync();
+                .Where(x => x.UserId == userId);
 
-            var income = records.Where(x => x.Type == RecordType.Income).Sum(x => x.Amount);
-            var expenses = records.Where(x => x.Type == RecordType.Expense).Sum(x => x.Amount);
+            //Database-side aggregations
+            var income = await query
+                .Where(x => x.Type == RecordType.Income)
+                .SumAsync(x => (decimal?)x.Amount) ?? 0;
 
-            var categoryTotals = records
+            var expenses = await query
+                .Where(x => x.Type == RecordType.Expense)
+                .SumAsync(x => (decimal?)x.Amount) ?? 0;
+
+            //Category totals. DB-side calculation
+            var categoryTotals = await query
                 .GroupBy(x => x.Category)
-                .ToDictionary(g => g.Key, g => g.Sum(x => x.Amount));
+                .Select(g => new { g.Key, Total = g.Sum(x => x.Amount) })
+                .ToDictionaryAsync(x => x.Key, x => x.Total);
 
-            var recent = records
+            //Recent 5 transactions 
+            var recent = await query
                 .OrderByDescending(x => x.Date)
                 .Take(5)
                 .Select(r => new FinancialRecordResponseDto
@@ -41,7 +49,8 @@ namespace FinanceDashboard.Application.Services
                     Category = r.Category,
                     Date = r.Date,
                     Notes = r.Notes
-                }).ToList();
+                })
+                .ToListAsync();
 
             return new DashboardSummaryDto
             {
@@ -52,5 +61,78 @@ namespace FinanceDashboard.Application.Services
                 RecentTransactions = recent
             };
         }
+
+
+        public async Task<decimal> GetTotalIncomeAsync(string userId)
+        {
+            return await _unitOfWork.FinancialRecordRepository
+                .Query()
+                .Where(x => x.UserId == userId && x.Type == RecordType.Income)
+                .SumAsync(x => (decimal?)x.Amount) ?? 0;
+        }
+
+
+        public async Task<decimal> GetTotalExpensesAsync(string userId)
+        {
+            return await _unitOfWork.FinancialRecordRepository
+                .Query()
+                .Where(x => x.UserId == userId && x.Type == RecordType.Expense)
+                .SumAsync(x => (decimal?)x.Amount) ?? 0;
+        }
+
+
+        public async Task<Dictionary<string, decimal>> GetCategoryTotalsAsync(string userId)
+        {
+            return await _unitOfWork.FinancialRecordRepository
+                .Query()
+                .Where(x => x.UserId == userId)
+                .GroupBy(x => x.Category)
+                .Select(g => new { Category = g.Key, Total = g.Sum(x => x.Amount) })
+                .ToDictionaryAsync(x => x.Category, x => x.Total);
+        }
+
+
+        public async Task<List<FinancialRecordResponseDto>> GetRecentAsync(string userId)
+        {
+            return await _unitOfWork.FinancialRecordRepository
+                .Query()
+                .Where(x => x.UserId == userId)
+                .OrderByDescending(x => x.Date)
+                .Take(5)
+                .Select(r => new FinancialRecordResponseDto
+                {
+                    Id = r.Id,
+                    Amount = r.Amount,
+                    Type = r.Type.ToString(),
+                    Category = r.Category,
+                    Date = r.Date,
+                    Notes = r.Notes
+                })
+                .ToListAsync();
+        }
+
+
+        public async Task<List<MonthlyTrendDto>> GetMonthlyTrendsAsync(string userId)
+        {
+            return await _unitOfWork.FinancialRecordRepository
+                .Query()
+                .Where(x => x.UserId == userId)
+                .GroupBy(x => new { x.Date.Year, x.Date.Month })
+                .Select(g => new MonthlyTrendDto
+                {
+                    Year = g.Key.Year,
+                    Month = g.Key.Month,
+                    Income = g
+                        .Where(x => x.Type == RecordType.Income)
+                        .Sum(x => (decimal?)x.Amount) ?? 0,
+                    Expense = g
+                        .Where(x => x.Type == RecordType.Expense)
+                        .Sum(x => (decimal?)x.Amount) ?? 0
+                })
+                .OrderBy(x => x.Year)
+                .ThenBy(x => x.Month)
+                .ToListAsync();
+        }
+
     }
 }
