@@ -6,6 +6,7 @@ using FinanceDashboard.Application.Interfaces;
 using FinanceDashboard.Application.Interfaces.IServices;
 using FinanceDashboard.Application.Services;
 using FinanceDashboard.Application.Validators;
+using FinanceDashboard.Commons.Utilities;
 using FinanceDashboard.Domain.Models;
 using FinanceDashboard.Infrastructure.Context;
 using FinanceDashboard.Infrastructure.Extensions;
@@ -16,6 +17,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.Reflection;
 using System.Text;
+using System.Threading.RateLimiting;
+using StatusCodes = FinanceDashboard.Commons.Utilities.StatusCodes;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
@@ -48,6 +51,57 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(key)
     };
 });
+
+builder.Services.AddRateLimiter(options =>
+{
+    //Global limiter (fallback)
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+    {
+        var userId = context.User?.Identity?.IsAuthenticated == true
+            ? context.User.FindFirst("sub")?.Value ?? "authenticated-user"
+            : context.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: userId,
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5, // max requests
+                Window = TimeSpan.FromSeconds(30), // per 30 seconds
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 2
+            });
+    });
+
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.TooManyRequests;
+        context.HttpContext.Response.ContentType = "application/json";
+
+        var response = new Response<string>
+        {
+            StatusCode = StatusCodes.TooManyRequests,
+            Message = ResponseMessages.TooManyRequests,
+            Data = null
+        };
+
+        await context.HttpContext.Response.WriteAsJsonAsync(response, token);
+    };
+
+
+    //Named policy (for specific endpoints)
+    options.AddPolicy("Strict", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString(),
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromSeconds(30),
+                QueueLimit = 0
+            }));
+
+    options.RejectionStatusCode = StatusCodes.TooManyRequests;
+});
+
 
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
@@ -82,6 +136,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseMiddleware<ExceptionMiddleware>();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 

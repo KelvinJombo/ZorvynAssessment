@@ -34,5 +34,8 @@
         //Generic Errors
         public const string ServerError = "An unexpected error occurred";
         public const string BadRequest = "Invalid request";
+
+        //Rate Limiting
+        public const string TooManyRequests = "Too many requests. Please try again later.";
     }
 }

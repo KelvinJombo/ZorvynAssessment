@@ -9,5 +9,6 @@
         public const int Forbidden = 403;
         public const int NotFound = 404;
         public const int InternalServerError = 500;
+        public const int TooManyRequests = 429;
     }
 }

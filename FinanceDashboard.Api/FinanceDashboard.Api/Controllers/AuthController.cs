@@ -4,6 +4,7 @@ using FinanceDashboard.Application.Interfaces.IServices;
 using FinanceDashboard.Domain.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 
 namespace FinanceDashboard.Api.Controllers
@@ -20,6 +21,7 @@ namespace FinanceDashboard.Api.Controllers
         }
 
         [HttpPost("register")]
+        [EnableRateLimiting("Strict")]
         public async Task<IActionResult> Register(RegisterDto dto)
         {
             var result = await _authService.RegisterAsync(dto);
@@ -27,6 +29,7 @@ namespace FinanceDashboard.Api.Controllers
         }
 
         [HttpPost("login")]
+        [EnableRateLimiting("Strict")]
         public async Task<IActionResult> Login(LoginDto dto)
         {
             var result = await _authService.LoginAsync(dto);
