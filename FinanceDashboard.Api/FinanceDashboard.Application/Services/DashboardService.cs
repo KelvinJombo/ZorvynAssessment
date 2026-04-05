@@ -19,21 +19,13 @@ namespace FinanceDashboard.Application.Services
 
         public async Task<Response<DashboardSummaryDto>> GetSummaryAsync(string userId)
         {
-            var query = _unitOfWork.FinancialRecordRepository
-                .Query()
-                .Where(x => x.UserId == userId);
+            var query = _unitOfWork.FinancialRecordRepository.Query().Where(x => x.UserId == userId);
 
-            var income = await query
-                .Where(x => x.Type == RecordType.Income)
-                .SumAsync(x => (decimal?)x.Amount) ?? 0;
+            var income = await query.Where(x => x.Type == RecordType.Income).SumAsync(x => (decimal?)x.Amount) ?? 0;
 
-            var expenses = await query
-                .Where(x => x.Type == RecordType.Expense)
-                .SumAsync(x => (decimal?)x.Amount) ?? 0;
+            var expenses = await query.Where(x => x.Type == RecordType.Expense).SumAsync(x => (decimal?)x.Amount) ?? 0;
 
-            var categoryTotals = await query
-                .GroupBy(x => x.Category)
-                .Select(g => new { g.Key, Total = g.Sum(x => x.Amount) })
+            var categoryTotals = await query.GroupBy(x => x.Category).Select(g => new { g.Key, Total = g.Sum(x => x.Amount) })
                 .ToDictionaryAsync(x => x.Key, x => x.Total);
 
             var recent = await query

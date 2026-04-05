@@ -1,8 +1,5 @@
 ﻿using FinanceDashboard.Application.DTOs.Auth;
-using FinanceDashboard.Application.Interfaces;
 using FinanceDashboard.Application.Interfaces.IServices;
-using FinanceDashboard.Domain.Models;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;

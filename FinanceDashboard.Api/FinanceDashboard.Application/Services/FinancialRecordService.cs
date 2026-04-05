@@ -22,18 +22,13 @@ namespace FinanceDashboard.Application.Services
 
         public async Task<Response<PagedResult<FinancialRecordResponseDto>>> GetAllAsync(string userId, PaginationParams pagination)
         {
-            var query = _unitOfWork.FinancialRecordRepository
-                .Query()
-                .Where(x => x.UserId == userId);
+            var query = _unitOfWork.FinancialRecordRepository.Query().Where(x => x.UserId == userId);
 
             //Total count before pagination
             var totalCount = await query.CountAsync();
 
             //Applying pagination
-            var items = await query
-                .OrderByDescending(x => x.Date)
-                .Skip(pagination.Skip)
-                .Take(pagination.PageSize)
+            var items = await query.OrderByDescending(x => x.Date).Skip(pagination.Skip).Take(pagination.PageSize)
                 .Select(r => new FinancialRecordResponseDto
                 {
                     Id = r.Id,
@@ -141,9 +136,7 @@ namespace FinanceDashboard.Application.Services
 
         public async Task<Response<PagedResult<FinancialRecordResponseDto>>> GetFilteredAsync(string userId, FinancialRecordFilterDto filter)
         {
-            var query = _unitOfWork.FinancialRecordRepository
-                .Query()
-                .Where(x => x.UserId == userId);
+            var query = _unitOfWork.FinancialRecordRepository.Query().Where(x => x.UserId == userId);
 
             //Applying Dynamic Filters
             if (filter.StartDate.HasValue)

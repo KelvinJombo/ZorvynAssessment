@@ -15,7 +15,9 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Reflection;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
 using StatusCodes = FinanceDashboard.Commons.Utilities.StatusCodes;
@@ -44,12 +46,52 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = true,
+        ClockSkew = TimeSpan.FromMinutes(1),
         ValidateIssuerSigningKey = true,
 
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(key)
     };
+
+    // Configure Swagger to work with JWT
+    options.Events = new JwtBearerEvents
+    {
+        OnChallenge = async context =>
+        {
+            context.HandleResponse();
+
+            context.Response.StatusCode = StatusCodes.Unauthorized;
+            context.Response.ContentType = "application/json";
+
+            var response = new Response<string>
+            {
+                StatusCode = StatusCodes.Unauthorized,
+                Message = ResponseMessages.Unauthorized,
+                Data = null
+            };
+
+            await context.Response.WriteAsJsonAsync(response);
+        },
+
+        OnForbidden = async context =>
+        {
+            context.Response.StatusCode = StatusCodes.Forbidden;
+            context.Response.ContentType = "application/json";
+
+            var response = new Response<string>
+            {
+                StatusCode = StatusCodes.Forbidden,
+                Message = ResponseMessages.Forbidden,
+                Data = null
+            };
+
+            await context.Response.WriteAsJsonAsync(response);
+        }
+
+    };
+
+
 });
 
 builder.Services.AddRateLimiter(options =>
@@ -58,8 +100,8 @@ builder.Services.AddRateLimiter(options =>
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
     {
         var userId = context.User?.Identity?.IsAuthenticated == true
-            ? context.User.FindFirst("sub")?.Value ?? "authenticated-user"
-            : context.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+                ? context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "authenticated-user"
+                : context.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
 
         return RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: userId,
@@ -117,7 +159,41 @@ builder.Services.AddValidatorsFromAssembly(Assembly.GetAssembly(typeof(CreateFin
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Finance Dashboard API",
+        Version = "v1",
+        Description = "Finance Dashboard API with JWT Authentication"
+    });
+
+    // Configure Swagger to use JWT
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter your token. Example: abc123xyz"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 var app = builder.Build();
 

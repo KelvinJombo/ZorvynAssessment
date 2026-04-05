@@ -12,6 +12,7 @@
         public const string Unauthorized = "You are not authorized to perform this action";
         public const string AccountInactive = "Account is inactive";
         public const string LogoutSuccess = "Logged out successfully";
+        public const string Forbidden = "You are not permitted to access this route";
 
         //Registration
         public const string UserCreated = "User registered successfully";

@@ -24,7 +24,7 @@ namespace FinanceDashboard.Infrastructure.Context
                 entity.HasOne(x => x.User)
                       .WithMany(u => u.FinancialRecords)
                       .HasForeignKey(x => x.UserId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                      .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasQueryFilter(x => !x.IsDeleted);
             });

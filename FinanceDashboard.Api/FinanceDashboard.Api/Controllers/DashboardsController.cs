@@ -18,7 +18,7 @@ namespace FinanceDashboard.Api.Controllers
            
             _dashboardService = dashboardService;
         }
-        
+
         private string GetUserId() =>
             User.FindFirstValue(ClaimTypes.NameIdentifier)!;       
 
@@ -33,6 +33,7 @@ namespace FinanceDashboard.Api.Controllers
 
 
         [HttpGet("total-income")]
+        [Authorize(Roles = "Analyst,Admin, Viewer")]
         public async Task<IActionResult> GetTotalIncome()
         {
             var result = await _dashboardService.GetTotalIncomeAsync(GetUserId());
@@ -41,6 +42,7 @@ namespace FinanceDashboard.Api.Controllers
 
 
         [HttpGet("total-expenses")]
+        [Authorize(Roles = "Analyst,Admin, Viewer")]
         public async Task<IActionResult> GetTotalExpenses()
         {
             var result = await _dashboardService.GetTotalExpensesAsync(GetUserId());
@@ -49,6 +51,7 @@ namespace FinanceDashboard.Api.Controllers
 
 
         [HttpGet("category-totals")]
+        [Authorize(Roles = "Analyst,Admin, Viewer")]
         public async Task<IActionResult> GetCategoryTotals()
         {
             var result = await _dashboardService.GetCategoryTotalsAsync(GetUserId());
@@ -57,6 +60,7 @@ namespace FinanceDashboard.Api.Controllers
 
 
         [HttpGet("recent")]
+        [Authorize(Roles = "Analyst,Admin, Viewer")]
         public async Task<IActionResult> GetRecent()
         {
             var result = await _dashboardService.GetRecentAsync(GetUserId());
@@ -65,6 +69,7 @@ namespace FinanceDashboard.Api.Controllers
 
 
         [HttpGet("monthly-trends")]
+        [Authorize(Roles = "Analyst,Admin, Viewer")]
         public async Task<IActionResult> GetMonthlyTrends()
         {
             var result = await _dashboardService.GetMonthlyTrendsAsync(GetUserId());

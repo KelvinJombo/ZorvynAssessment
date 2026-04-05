@@ -88,18 +88,7 @@ namespace FinanceDashboard.Application.Services
                 return Response<AuthResponseDto>.Failure(
                     ResponseMessages.InvalidCredentials,
                     StatusCodes.Unauthorized
-                );
-
-            // 🔄 Auto deactivate if inactive for 3 months
-            var lastTransaction = user.FinancialRecords
-                .OrderByDescending(x => x.Date)
-                .FirstOrDefault();
-
-            if (lastTransaction != null && lastTransaction.Date < DateTime.UtcNow.AddMonths(-3))
-            {
-                user.IsActive = false;
-                await _userManager.UpdateAsync(user);
-            }
+                );            
 
             if (!user.IsActive)
                 return Response<AuthResponseDto>.Failure(

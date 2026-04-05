@@ -1,4 +1,5 @@
 ﻿using FinanceDashboard.Application.Interfaces.Repository;
+using FinanceDashboard.Infrastructure.BackgroundJobs;
 using FinanceDashboard.Infrastructure.Context;
 using FinanceDashboard.Infrastructure.Repository;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,7 @@ namespace FinanceDashboard.Infrastructure.Extensions
 
             services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddHostedService<UserInactivityService>();
 
             return services;
         }
