@@ -6,8 +6,9 @@ namespace FinanceDashboard.Application.Interfaces.IServices
     public interface IFinancialRecordService
     {
         Task<Response<FinancialRecordResponseDto>> CreateAsync(string userId, CreateFinancialRecordDto dto);
-        Task<Response<List<FinancialRecordResponseDto>>> GetAllAsync(string userId);
+        Task<Response<PagedResult<FinancialRecordResponseDto>>> GetAllAsync(string userId, PaginationParams pagination);
         Task<Response<string>> DeleteAsync(string id, string userId);
         Task<Response<FinancialRecordResponseDto>> UpdateAsync(string id, string userId, UpdateFinancialRecordDto dto);
+        Task<Response<PagedResult<FinancialRecordResponseDto>>> GetFilteredAsync(string userId,FinancialRecordFilterDto filter);
     }
 }

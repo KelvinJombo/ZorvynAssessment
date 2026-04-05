@@ -1,5 +1,6 @@
 ﻿using FinanceDashboard.Application.DTOs.Record;
 using FinanceDashboard.Application.Interfaces.IServices;
+using FinanceDashboard.Commons.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -23,9 +24,9 @@ namespace FinanceDashboard.Api.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Viewer,Analyst,Admin")]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] PaginationParams pagination)
         {
-            var result = await _service.GetAllAsync(GetUserId());
+            var result = await _service.GetAllAsync(GetUserId(), pagination);
             return StatusCode(result.StatusCode, result);
         }
 
@@ -53,5 +54,17 @@ namespace FinanceDashboard.Api.Controllers
             await _service.DeleteAsync(id, GetUserId());
             return NoContent();
         }
+
+
+        [HttpGet("filter")]
+        [Authorize(Roles = "Viewer,Analyst,Admin")]
+        public async Task<IActionResult> Filter([FromQuery] FinancialRecordFilterDto filter)
+        {
+            var result = await _service.GetFilteredAsync(GetUserId(), filter);
+            return StatusCode(result.StatusCode, result);
+        }
+
+
+
     }
 }

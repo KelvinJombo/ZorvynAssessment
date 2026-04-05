@@ -1,4 +1,5 @@
 ﻿using FinanceDashboard.Application.Interfaces.Repository;
+using FinanceDashboard.Domain.Models;
 using FinanceDashboard.Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -50,5 +51,19 @@ namespace FinanceDashboard.Infrastructure.Repository
         {
             _dbSet.Remove(entity);
         }
+
+        public void SoftDelete(T entity)
+        {
+            if (entity is BaseEntity baseEntity)
+            {
+                baseEntity.IsDeleted = true;
+                baseEntity.DeletedAt = DateTime.UtcNow;
+            }
+
+            _dbSet.Update(entity);
+        }
+
+
+
     }
 }

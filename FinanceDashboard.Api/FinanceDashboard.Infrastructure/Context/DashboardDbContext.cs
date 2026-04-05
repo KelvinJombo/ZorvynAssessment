@@ -25,6 +25,8 @@ namespace FinanceDashboard.Infrastructure.Context
                       .WithMany(u => u.FinancialRecords)
                       .HasForeignKey(x => x.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasQueryFilter(x => !x.IsDeleted);
             });
         }
     }

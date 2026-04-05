@@ -20,12 +20,20 @@ namespace FinanceDashboard.Application.Services
             _mapper = mapper;
         }
 
-        public async Task<Response<List<FinancialRecordResponseDto>>> GetAllAsync(string userId)
+        public async Task<Response<PagedResult<FinancialRecordResponseDto>>> GetAllAsync(string userId, PaginationParams pagination)
         {
-            var records = await _unitOfWork.FinancialRecordRepository
+            var query = _unitOfWork.FinancialRecordRepository
                 .Query()
-                .Where(x => x.UserId == userId)
+                .Where(x => x.UserId == userId);
+
+            //Total count before pagination
+            var totalCount = await query.CountAsync();
+
+            //Applying pagination
+            var items = await query
                 .OrderByDescending(x => x.Date)
+                .Skip(pagination.Skip)
+                .Take(pagination.PageSize)
                 .Select(r => new FinancialRecordResponseDto
                 {
                     Id = r.Id,
@@ -37,10 +45,15 @@ namespace FinanceDashboard.Application.Services
                 })
                 .ToListAsync();
 
-            return Response<List<FinancialRecordResponseDto>>.Success(
-                records,
-                ResponseMessages.Success
-            );
+            var result = new PagedResult<FinancialRecordResponseDto>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                PageNumber = pagination.PageNumber,
+                PageSize = pagination.PageSize
+            };
+
+            return Response<PagedResult<FinancialRecordResponseDto>>.Success(result, ResponseMessages.Success);
         }
 
         public async Task<Response<FinancialRecordResponseDto>> CreateAsync(string userId, CreateFinancialRecordDto dto)
@@ -114,24 +127,70 @@ namespace FinanceDashboard.Application.Services
             var record = await _unitOfWork.FinancialRecordRepository.GetByIdAsync(id);
 
             if (record == null)
-                return Response<string>.Failure(
-                    ResponseMessages.RecordNotFound,
-                    StatusCodes.NotFound
-                );
+                return Response<string>.Failure(ResponseMessages.RecordNotFound, StatusCodes.NotFound);
 
             if (record.UserId != userId)
-                return Response<string>.Failure(
-                    ResponseMessages.Unauthorized,
-                    StatusCodes.Unauthorized
-                );
+                return Response<string>.Failure(ResponseMessages.Unauthorized, StatusCodes.Unauthorized);
 
-            _unitOfWork.FinancialRecordRepository.Delete(record);
+            _unitOfWork.FinancialRecordRepository.SoftDelete(record);
             await _unitOfWork.SaveChangesAsync();
 
-            return Response<string>.Success(
-                "Deleted",
-                ResponseMessages.RecordDeleted
-            );
+            return Response<string>.Success("Deleted", ResponseMessages.RecordDeleted);
         }
+
+
+        public async Task<Response<PagedResult<FinancialRecordResponseDto>>> GetFilteredAsync(string userId, FinancialRecordFilterDto filter)
+        {
+            var query = _unitOfWork.FinancialRecordRepository
+                .Query()
+                .Where(x => x.UserId == userId);
+
+            //Applying Dynamic Filters
+            if (filter.StartDate.HasValue)
+                query = query.Where(x => x.Date >= filter.StartDate.Value);
+
+            if (filter.EndDate.HasValue)
+                query = query.Where(x => x.Date <= filter.EndDate.Value);
+
+            if (!string.IsNullOrWhiteSpace(filter.Category))
+                query = query.Where(x => x.Category.ToLower().Contains(filter.Category.ToLower()));
+
+            if (filter.Type.HasValue)
+                query = query.Where(x => x.Type == filter.Type.Value);
+
+            if (filter.MinAmount.HasValue)
+                query = query.Where(x => x.Amount >= filter.MinAmount.Value);
+
+            if (filter.MaxAmount.HasValue)
+                query = query.Where(x => x.Amount <= filter.MaxAmount.Value);
+
+            //Total count before pagination
+            var totalCount = await query.CountAsync();
+
+            //Pagination Proper
+            var items = await query.OrderByDescending(x => x.Date).Skip(filter.Skip).Take(filter.PageSize)
+                .Select(r => new FinancialRecordResponseDto
+                {
+                    Id = r.Id,
+                    Amount = r.Amount,
+                    Type = r.Type.ToString(),
+                    Category = r.Category,
+                    Date = r.Date,
+                    Notes = r.Notes
+                })
+                .ToListAsync();
+
+            var result = new PagedResult<FinancialRecordResponseDto>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                PageNumber = filter.PageNumber,
+                PageSize = filter.PageSize
+            };
+
+            return Response<PagedResult<FinancialRecordResponseDto>>.Success(result, ResponseMessages.Success);
+        }
+
+
     }
 }
